@@ -1,19 +1,29 @@
 'use strict';
 
 const fs = require('fs');
-const logger = require('logger');
-const eventHub = require('eventHub');
+require('./logger');
+const eventHub = require('./event');
+const {promisify} = require('util');
 
-fs.writeFile( file, Buffer.from(text), (err, data) => {
-  if(err) { throw err; }
-  console.log(`${file} saved`);
-});
+const readFileProm = promisify(fs.readFile);
 
-fs.readFile( file, (err, data) => {
-  if(err) { throw err; }
-});
+const writeFileProm = promisify(fs.writeFile);
 
-let text = data.toString().toUpperCase();
+
+const alterFile = (file) => {
+  readFileProm(file)
+  .then(data => {
+    let text = data.toString().toUpperCase();
+    writeFileProm(file, Buffer.from(text));
+    console.log(text);
+      console.log(`${file} saved`);
+      eventHub.emit('save', file);
+  })
+   .catch(error => {
+     eventHub.emit('error', error)
+   })
+  };
+
 
 let file = process.argv.slice(2).shift();
 alterFile(file);
